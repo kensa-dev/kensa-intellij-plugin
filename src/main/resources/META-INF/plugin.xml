@@ -1,15 +1,18 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.paulbrooks.kensaintellijplugin</id>
-    <name>kensa-intellij-plugin</name>
-    <vendor>paul-brooks</vendor>
+    <id>dev.kensa.plugin.intellij-plugin</id>
+    <name>Kensa</name>
+    <vendor>Kensa</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>JUnit</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+    <resource-bundle>messages.KensaBundle</resource-bundle>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.paulbrooks.kensaintellijplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.paulbrooks.kensaintellijplugin.startup.MyProjectActivity" />
-    </extensions>
+    <actions>
+        <action id="kensaIndexAction" class="dev.kensa.plugin.intellij.action.KensaIndexAction" icon="/icons/browsers.png">
+            <add-to-group group-id="RunTab.TopToolbar" anchor="last"/>
+        </action>
+    </actions>
+
 </idea-plugin>
