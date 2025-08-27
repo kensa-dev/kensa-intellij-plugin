@@ -1,83 +1,63 @@
 package dev.kensa.plugin.intellij.action
 
-import com.intellij.execution.impl.ConsoleViewImpl
+import com.intellij.execution.RunnerAndConfigurationSettings
+import com.intellij.execution.configurations.RunConfiguration
+import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.junit.JUnitConfiguration
-import com.intellij.execution.testframework.ui.BaseTestsOutputConsoleView
-import com.intellij.execution.ui.ExecutionConsole
-import com.intellij.execution.ui.RunContentManager
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys.RUN_PROFILE
 import com.intellij.openapi.diagnostic.thisLogger
+import org.jetbrains.idea.maven.execution.MavenRunConfiguration
+import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
+import dev.kensa.plugin.intellij.console.KensaOutputFilter
 import java.io.File
 
 class KensaIndexAction : AnAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread {
-        return super.getActionUpdateThread()
+        return ActionUpdateThread.BGT
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-        val selectedContent = RunContentManager.getInstance(project).selectedContent
-        val console = selectedContent?.executionConsole
-
-        val kensaOutput = extractKensaOutput(console)
-        if (kensaOutput != null) {
-            openInBrowser(kensaOutput)
+        val output = KensaOutputFilter.currentKensaOutput
+        if (output != null) {
+            openInBrowser(output)
         } else {
-            thisLogger().warn("Could not extract Kensa output from console")
+            thisLogger().warn("No Kensa output available")
         }
     }
 
     override fun update(e: AnActionEvent) {
-        val isTest = e.getData(RUN_PROFILE) is JUnitConfiguration
+        val runProfile = e.getData(RUN_PROFILE)
+        val isRelevantConfiguration = isRelevantConfiguration(runProfile)
 
-        val enabled = if (isTest) {
-            val project = e.project ?: return
-            val selectedContent = RunContentManager.getInstance(project).selectedContent
-            val console = selectedContent?.executionConsole
-
-            canEnable(console, e)
-        } else false
+        // Only show if we have both a relevant config and detected Kensa output
+        val enabled = isRelevantConfiguration && KensaOutputFilter.currentKensaOutput != null
 
         e.presentation.isVisible = enabled
         e.presentation.isEnabled = enabled
     }
 
-    private fun canEnable(consoleView: ExecutionConsole?, e: AnActionEvent) =
-        if (consoleView is BaseTestsOutputConsoleView) {
-            val console = consoleView.console
-            if (console is ConsoleViewImpl) {
-                val document = console.editor?.document
-                val consoleText = document?.text ?: ""
+    private fun isRelevantConfiguration(runProfile: RunProfile?): Boolean {
+        if (runProfile == null) return false
 
-                consoleText.contains("Kensa Output :")
-            } else false
-        } else false
-
-    private fun extractKensaOutput(consoleView: ExecutionConsole?): String? {
-        if (consoleView is BaseTestsOutputConsoleView) {
-            val console = consoleView.console
-            if (console is ConsoleViewImpl) {
-                val document = console.editor?.document
-                val consoleText = document?.text ?: return null
-
-                val lines = consoleText.lines()
-                for (i in lines.indices) {
-                    val line = lines[i]
-                    if (line.contains("Kensa Output :")) {
-                        // Get the next line if it exists
-                        if (i + 1 < lines.size) {
-                            return lines[i + 1].trim()
-                        }
-                    }
-                }
-            }
+        val runConfiguration = when (runProfile) {
+            is RunConfiguration -> runProfile
+            is RunnerAndConfigurationSettings -> runProfile.configuration
+            else -> return false
         }
-        return null
+
+        return when (runConfiguration) {
+            is JUnitConfiguration -> true
+            is GradleRunConfiguration -> runConfiguration.isRunAsTest
+            is MavenRunConfiguration -> {
+                runConfiguration.runnerParameters.goals.any { it.contains("test") }
+            }
+            else -> false
+        }
     }
 
     private fun openInBrowser(output: String) {

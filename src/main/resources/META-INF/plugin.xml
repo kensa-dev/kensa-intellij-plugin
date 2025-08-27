@@ -6,8 +6,16 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>JUnit</depends>
+    <depends>com.intellij.gradle</depends>
+    <depends>org.jetbrains.idea.maven</depends>
 
     <resource-bundle>messages.KensaBundle</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <consoleFilterProvider implementation="dev.kensa.plugin.intellij.console.KensaConsoleFilterProvider"/>
+
+    </extensions>
+
 
     <actions>
         <action id="kensaIndexAction" class="dev.kensa.plugin.intellij.action.KensaIndexAction" icon="/icons/browsers.png">
