@@ -26,8 +26,7 @@ import dev.kensa.plugin.intellij.service.ProjectKensaOutput
 import org.jetbrains.idea.maven.execution.MavenRunConfiguration
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 
-
-class KensaIndexAction : AnAction() {
+class OpenKensaIndexAction : AnAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread = BGT
 

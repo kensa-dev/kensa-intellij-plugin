@@ -3,9 +3,21 @@ package dev.kensa.plugin.intellij.console
 import com.intellij.execution.filters.ConsoleFilterProvider
 import com.intellij.execution.filters.Filter
 import com.intellij.execution.filters.Filter.Result
+import com.intellij.execution.filters.HyperlinkInfo
+import com.intellij.ide.IdeBundle
+import com.intellij.ide.browsers.BrowserLauncher
+import com.intellij.ide.browsers.OpenInBrowserRequest
+import com.intellij.ide.browsers.WebBrowserService
+import com.intellij.ide.browsers.WebBrowserUrlProvider
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import dev.kensa.plugin.intellij.service.ProjectKensaOutput
 
 class KensaConsoleFilterProvider : ConsoleFilterProvider {
@@ -28,11 +40,60 @@ class KensaOutputFilter(private val project: Project) : Filter {
             if (output.isNotEmpty()) {
                 logger.debug("Captured Kensa output: $output")
                 foundKensaMarker = false
+
                 project.service<ProjectKensaOutput>().temporaryOutput = output
+
+                val startOffset = entireLength - line.length
+                val endOffset = entireLength
+
+                return Result(
+                    startOffset,
+                    endOffset,
+                    KensaIndexHyperlinkInfo(project, output)
+                )
             }
         }
 
         return null
+    }
+
+    private class KensaIndexHyperlinkInfo(
+        private val project: Project,
+        private val indexPath: String,
+    ) : HyperlinkInfo {
+
+        private val log = thisLogger()
+
+        override fun navigate(project: Project) {
+            val psiFile = indexPath.asPsiFileIn(this.project) ?: return
+
+            val request = createOpenInBrowserRequest(psiFile) ?: return
+
+            try {
+                val urls = WebBrowserService.getInstance().getUrlsToOpen(request, false)
+                BrowserLauncher.instance.browse(urls.first().toExternalForm(), null, request.project)
+            } catch (ex: WebBrowserUrlProvider.BrowserException) {
+                Messages.showErrorDialog(ex.message, IdeBundle.message("browser.error"))
+            } catch (ex: Exception) {
+                log.error(ex)
+            }
+        }
+
+        private fun createOpenInBrowserRequest(element: PsiElement): OpenInBrowserRequest? {
+            val psiFile = runReadAction {
+                if (element.isValid) {
+                    element.containingFile?.let { if (it.virtualFile == null) null else it }
+                } else null
+            } ?: return null
+
+            return object : OpenInBrowserRequest(psiFile, true) {
+                override val element = element
+            }
+        }
+
+        private fun String.asPsiFileIn(project: Project): PsiFile? =
+            LocalFileSystem.getInstance().findFileByPath(this)
+                ?.let { PsiManager.getInstance(project).findFile(it) }
     }
 
     companion object {
