@@ -1,8 +1,10 @@
 package dev.kensa.plugin.intellij.service
 
 import com.intellij.execution.ui.RunContentDescriptor
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.Service.Level.PROJECT
+import com.intellij.openapi.util.Disposer
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(PROJECT)
@@ -13,20 +15,29 @@ class ProjectKensaOutput {
     @Volatile
     var temporaryOutput: String? = null
 
-    operator fun get(descriptor: RunContentDescriptor): String? =
-        if (hasOutputFor(descriptor))
-            descriptorOutputs[descriptor]
-        else {
-            claimTemporaryFor(descriptor)
-            descriptorOutputs[descriptor]
-        }
-
-    operator fun set(descriptor: RunContentDescriptor, output: String) {
-        descriptorOutputs[descriptor] = output
+    operator fun get(descriptor: RunContentDescriptor): String? {
+        claimTemporaryFor(descriptor)
+        return descriptorOutputs[descriptor]
     }
 
-    fun hasOutputFor(descriptor: RunContentDescriptor): Boolean = descriptorOutputs.containsKey(descriptor) || claimTemporaryFor(descriptor)
+    operator fun set(descriptor: RunContentDescriptor, output: String) {
+        descriptorOutputs.put(descriptor, output) ?: registerCleanup(descriptor)
+    }
 
-    private fun claimTemporaryFor(descriptor: RunContentDescriptor): Boolean =
-        temporaryOutput.takeIf { it != null }?.let { descriptorOutputs[descriptor] = it; temporaryOutput = null; true } ?: false
+    fun hasOutputFor(descriptor: RunContentDescriptor): Boolean =
+        descriptorOutputs.containsKey(descriptor) || claimTemporaryFor(descriptor)
+
+    private fun claimTemporaryFor(descriptor: RunContentDescriptor): Boolean {
+        val tmp = temporaryOutput ?: return false
+        temporaryOutput = null
+
+        descriptorOutputs.put(descriptor, tmp) ?: registerCleanup(descriptor)
+        return true
+    }
+
+    private fun registerCleanup(descriptor: RunContentDescriptor) {
+        Disposer.register(descriptor as Disposable) {
+            descriptorOutputs.remove(descriptor)
+        }
+    }
 }
