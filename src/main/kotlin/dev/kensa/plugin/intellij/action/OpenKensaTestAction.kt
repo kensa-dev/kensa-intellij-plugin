@@ -128,7 +128,7 @@ class OpenKensaTestAction : AnAction() {
             }
         }
 
-        val finalUrl = baseUrl + route
+        val finalUrl = baseUrl.substringBefore('#') + route
 
         try {
             BrowserLauncher.instance.browse(finalUrl, null, project)
