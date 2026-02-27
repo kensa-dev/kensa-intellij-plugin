@@ -13,6 +13,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <consoleFilterProvider implementation="dev.kensa.plugin.intellij.console.KensaConsoleFilterProvider"/>
+        <notificationGroup id="Kensa" displayType="BALLOON"/>
+        <postStartupActivity implementation="dev.kensa.plugin.intellij.execution.KensaOutputFileWatcherStartupActivity"/>
     </extensions>
 
     <actions>
