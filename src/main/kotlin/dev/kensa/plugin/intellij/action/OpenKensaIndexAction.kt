@@ -31,9 +31,8 @@ class OpenKensaIndexAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = BGT
 
     override fun actionPerformed(e: AnActionEvent) {
-        val kensaOutputService = e.projectKensaOutput()
-        val descriptor = e.runContentDescriptor
-        val output = kensaOutputService[descriptor]
+        val descriptor = e.runContentDescriptor ?: return
+        val output = e.projectKensaOutput()[descriptor]
 
         if (output != null) openInBrowser(output.asPsiFileIn(e.requiredProject))
     }
@@ -69,9 +68,14 @@ class OpenKensaIndexAction : AnAction() {
     }
 
     override fun update(e: AnActionEvent) {
+        val descriptor = e.runContentDescriptor ?: run {
+            e.presentation.isVisible = false
+            e.presentation.isEnabled = false
+            return
+        }
         val projectKensaOutput = e.projectKensaOutput()
         val isRelevantConfiguration = isRelevantConfiguration(e.getData(RUN_PROFILE))
-        val hasKensaOutput = isRelevantConfiguration && projectKensaOutput.hasOutputFor(e.runContentDescriptor)
+        val hasKensaOutput = isRelevantConfiguration && projectKensaOutput.hasOutputFor(descriptor)
 
         e.presentation.isVisible = hasKensaOutput
         e.presentation.isEnabled = hasKensaOutput
@@ -80,7 +84,7 @@ class OpenKensaIndexAction : AnAction() {
     private fun String.asPsiFileIn(project: Project): PsiFile? = LocalFileSystem.getInstance().findFileByPath(this)?.let { PsiManager.getInstance(project).findFile(it) }
     private val AnActionEvent.requiredProject get() = project!!
     private fun AnActionEvent.projectKensaOutput() = requiredProject.service<ProjectKensaOutput>()
-    private val AnActionEvent.runContentDescriptor: RunContentDescriptor get() = RunContentManager.getInstance(requiredProject).selectedContent!!
+    private val AnActionEvent.runContentDescriptor: RunContentDescriptor? get() = RunContentManager.getInstance(requiredProject).selectedContent
 
     private fun isRelevantConfiguration(runProfile: RunProfile?): Boolean {
         if (runProfile == null) return false

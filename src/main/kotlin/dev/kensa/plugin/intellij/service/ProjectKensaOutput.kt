@@ -29,6 +29,7 @@ class ProjectKensaOutput {
 
     private fun claimTemporaryFor(descriptor: RunContentDescriptor): Boolean {
         val tmp = temporaryOutput ?: return false
+        if (Disposer.isDisposed(descriptor)) return false
         temporaryOutput = null
 
         descriptorOutputs.put(descriptor, tmp) ?: registerCleanup(descriptor)
@@ -36,6 +37,10 @@ class ProjectKensaOutput {
     }
 
     private fun registerCleanup(descriptor: RunContentDescriptor) {
+        if (Disposer.isDisposed(descriptor)) {
+            descriptorOutputs.remove(descriptor)
+            return
+        }
         Disposer.register(descriptor as Disposable) {
             descriptorOutputs.remove(descriptor)
         }
