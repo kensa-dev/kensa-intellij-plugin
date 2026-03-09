@@ -15,12 +15,16 @@ class ProjectKensaOutput {
     @Volatile
     var temporaryOutput: String? = null
 
+    @Volatile
+    var latestIndexPath: String? = null
+
     operator fun get(descriptor: RunContentDescriptor): String? {
         claimTemporaryFor(descriptor)
         return descriptorOutputs[descriptor]
     }
 
     operator fun set(descriptor: RunContentDescriptor, output: String) {
+        latestIndexPath = output
         descriptorOutputs.put(descriptor, output) ?: registerCleanup(descriptor)
     }
 
@@ -32,6 +36,7 @@ class ProjectKensaOutput {
         if (Disposer.isDisposed(descriptor)) return false
         temporaryOutput = null
 
+        latestIndexPath = tmp
         descriptorOutputs.put(descriptor, tmp) ?: registerCleanup(descriptor)
         return true
     }

@@ -15,7 +15,24 @@
         <consoleFilterProvider implementation="dev.kensa.plugin.intellij.console.KensaConsoleFilterProvider"/>
         <notificationGroup id="Kensa" displayType="BALLOON"/>
         <postStartupActivity implementation="dev.kensa.plugin.intellij.execution.KensaOutputFileWatcherStartupActivity"/>
+        <projectConfigurable
+            parentId="tools"
+            instance="dev.kensa.plugin.intellij.settings.KensaSettingsConfigurable"
+            id="dev.kensa.settings"
+            displayName="Kensa"
+            nonDefaultProject="true"/>
+        <codeInsight.lineMarkerProvider
+            language="JAVA"
+            implementationClass="dev.kensa.plugin.intellij.gutter.KensaGutterLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider
+            language="kotlin"
+            implementationClass="dev.kensa.plugin.intellij.gutter.KensaGutterLineMarkerProvider"/>
     </extensions>
+
+    <projectListeners>
+        <listener topic="com.intellij.execution.testframework.sm.runner.SMTRunnerEventsListener"
+                  class="dev.kensa.plugin.intellij.gutter.KensaTestRunListener"/>
+    </projectListeners>
 
     <actions>
         <action id="kensaIndexAction" class="dev.kensa.plugin.intellij.action.OpenKensaIndexAction" icon="/icons/browsers.png">
