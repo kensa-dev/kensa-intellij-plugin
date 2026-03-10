@@ -18,7 +18,6 @@ import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.ui.awt.RelativePoint
-import dev.kensa.plugin.intellij.service.ProjectKensaOutput
 import dev.kensa.plugin.intellij.settings.KensaSettings
 import org.jetbrains.uast.*
 import java.awt.event.MouseEvent
@@ -102,8 +101,9 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
 
     private fun handleClick(mouseEvent: MouseEvent?, project: Project, classFqn: String, methodName: String?) {
         val settings = project.service<KensaSettings>()
-        val hasLocal = project.service<ProjectKensaOutput>().latestIndexPath
-            ?.let { java.io.File(it).exists() } == true
+        val localIndexPath = project.service<KensaTestResultsService>().getIndexPath(classFqn)
+            ?.takeIf { java.io.File(it).exists() }
+        val hasLocal = localIndexPath != null
         val hasCiUrl = settings.resolveUrl(classFqn, methodName) != null
 
         if (!hasLocal && !hasCiUrl) {
@@ -116,7 +116,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
         }
 
         val items = buildList {
-            if (hasLocal) add("Open Local Report" to { openLocal(project, classFqn, methodName) })
+            localIndexPath?.let { path -> add("Open Local Report" to { openLocal(project, path, classFqn, methodName) }) }
             if (hasCiUrl) add("Open CI Report" to { openCi(project, classFqn, methodName) })
         }
 
@@ -150,7 +150,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
         } ?: return false
 
         val kensaBase = JavaPsiFacade.getInstance(project)
-            .findClass(KENSA_TEST_FQN, GlobalSearchScope.projectScope(project))
+            .findClass(KENSA_TEST_FQN, GlobalSearchScope.allScope(project))
             ?: return false
 
         return InheritanceUtil.isInheritorOrSelf(psiClass, kensaBase, true)
@@ -165,9 +165,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
         }
     }
 
-    private fun openLocal(project: Project, classFqn: String, methodName: String?) {
-        val indexPath = project.service<ProjectKensaOutput>().latestIndexPath ?: return
-
+    private fun openLocal(project: Project, indexPath: String, classFqn: String, methodName: String?) {
         val vFile = LocalFileSystem.getInstance().findFileByPath(indexPath) ?: return
         val psiFile = runReadAction { PsiManager.getInstance(project).findFile(vFile) } ?: return
 

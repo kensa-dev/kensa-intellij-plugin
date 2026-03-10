@@ -14,6 +14,10 @@ class KensaTestResultsService(private val project: Project) {
 
     private val methodResults = ConcurrentHashMap<String, TestStatus>()
     private val classResults = ConcurrentHashMap<String, TestStatus>()
+    private val classIndexPaths = ConcurrentHashMap<String, String>()
+
+    @Volatile
+    var latestIndexPath: String? = null
 
     fun getMethodStatus(classFqn: String, methodName: String): TestStatus? =
         methodResults["$classFqn#$methodName"]
@@ -21,6 +25,25 @@ class KensaTestResultsService(private val project: Project) {
     fun getClassStatus(classFqn: String): TestStatus? =
         classResults[classFqn]
 
+    fun getIndexPath(classFqn: String): String? =
+        classIndexPaths[classFqn]
+
+    fun updateFromIndex(
+        classFqn: String,
+        classStatus: TestStatus?,
+        indexHtmlPath: String,
+        methodStatuses: Map<String, TestStatus>
+    ) {
+        if (classStatus != null) classResults[classFqn] = classStatus
+        classIndexPaths[classFqn] = indexHtmlPath
+        latestIndexPath = indexHtmlPath
+        methodStatuses.forEach { (method, status) ->
+            methodResults["$classFqn#$method"] = status
+        }
+        refreshMarkers()
+    }
+
+    // Called by SMTRunnerEventsListener for real-time updates during a run
     fun updateMethod(classFqn: String, methodName: String, status: TestStatus) {
         methodResults["$classFqn#$methodName"] = status
         refreshMarkers()
@@ -31,7 +54,7 @@ class KensaTestResultsService(private val project: Project) {
         refreshMarkers()
     }
 
-    private fun refreshMarkers() {
+    fun refreshMarkers() {
         invokeLater {
             if (!project.isDisposed) {
                 DaemonCodeAnalyzer.getInstance(project).restart()

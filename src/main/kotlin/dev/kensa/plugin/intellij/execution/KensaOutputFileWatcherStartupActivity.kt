@@ -18,6 +18,8 @@ import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
+import dev.kensa.plugin.intellij.gutter.KensaIndexLoader
+import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
 class KensaOutputFileWatcherStartupActivity : ProjectActivity {
@@ -27,6 +29,8 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         val basePath = project.basePath ?: return
 
+        scanExistingIndices(project, basePath)
+
         val lastNotifiedAt = AtomicLong(0)
         val debounceMs = 3000L
 
@@ -34,18 +38,29 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
             override fun after(events: List<VFileEvent>) {
                 val kensaEvents = events.filter { event ->
                     (event is VFileContentChangeEvent || event is VFileCreateEvent) &&
-                        event.path.endsWith("/kensa-output/index.html") &&
-                        event.path.startsWith(basePath)
+                        event.path.startsWith(basePath) &&
+                        event.path.contains("/kensa-output/") &&
+                        (event.path.endsWith("/index.html") || event.path.endsWith("/indices.json"))
                 }
 
                 if (kensaEvents.isEmpty()) return
+
+                kensaEvents
+                    .filter { it.path.endsWith("/indices.json") }
+                    .forEach { event ->
+                        val vFile = LocalFileSystem.getInstance().findFileByPath(event.path) ?: return@forEach
+                        KensaIndexLoader.loadFromFile(project, vFile)
+                    }
+
+                val indexHtmlEvents = kensaEvents.filter { it.path.endsWith("/index.html") }
+                if (indexHtmlEvents.isEmpty()) return
 
                 val now = System.currentTimeMillis()
                 val last = lastNotifiedAt.get()
                 if (now - last < debounceMs) return
                 if (!lastNotifiedAt.compareAndSet(last, now)) return
 
-                val indexPath = kensaEvents.last().path
+                val indexPath = indexHtmlEvents.last().path
                 log.debug("Kensa output detected: $indexPath")
 
                 NotificationGroupManager.getInstance()
@@ -59,6 +74,15 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
                     .notify(project)
             }
         })
+    }
+
+    private fun scanExistingIndices(project: Project, basePath: String) {
+        File(basePath).walkTopDown()
+            .filter { it.name == "indices.json" && it.parentFile?.name == "kensa-output" }
+            .forEach { file ->
+                val vFile = LocalFileSystem.getInstance().findFileByPath(file.path) ?: return@forEach
+                KensaIndexLoader.loadFromFile(project, vFile)
+            }
     }
 
     private class OpenKensaReportNotificationAction(

@@ -4,8 +4,6 @@ import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.junit.JUnitConfiguration
-import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.execution.ui.RunContentManager
 import com.intellij.ide.IdeBundle
 import com.intellij.ide.browsers.*
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -22,7 +20,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import dev.kensa.plugin.intellij.service.ProjectKensaOutput
+import dev.kensa.plugin.intellij.gutter.KensaTestResultsService
 import org.jetbrains.idea.maven.execution.MavenRunConfiguration
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 
@@ -31,10 +29,8 @@ class OpenKensaIndexAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = BGT
 
     override fun actionPerformed(e: AnActionEvent) {
-        val descriptor = e.runContentDescriptor ?: return
-        val output = e.projectKensaOutput()[descriptor]
-
-        if (output != null) openInBrowser(output.asPsiFileIn(e.requiredProject))
+        val indexPath = e.requiredProject.service<KensaTestResultsService>().latestIndexPath ?: return
+        openInBrowser(indexPath.asPsiFileIn(e.requiredProject))
     }
 
     private fun openInBrowser(psiFile: PsiFile?) {
@@ -68,23 +64,18 @@ class OpenKensaIndexAction : AnAction() {
     }
 
     override fun update(e: AnActionEvent) {
-        val descriptor = e.runContentDescriptor ?: run {
-            e.presentation.isVisible = false
-            e.presentation.isEnabled = false
-            return
-        }
-        val projectKensaOutput = e.projectKensaOutput()
         val isRelevantConfiguration = isRelevantConfiguration(e.getData(RUN_PROFILE))
-        val hasKensaOutput = isRelevantConfiguration && projectKensaOutput.hasOutputFor(descriptor)
+        val hasKensaOutput = isRelevantConfiguration &&
+            e.requiredProject.service<KensaTestResultsService>().latestIndexPath != null
 
         e.presentation.isVisible = hasKensaOutput
         e.presentation.isEnabled = hasKensaOutput
     }
 
-    private fun String.asPsiFileIn(project: Project): PsiFile? = LocalFileSystem.getInstance().findFileByPath(this)?.let { PsiManager.getInstance(project).findFile(it) }
+    private fun String.asPsiFileIn(project: Project): PsiFile? =
+        LocalFileSystem.getInstance().findFileByPath(this)?.let { PsiManager.getInstance(project).findFile(it) }
+
     private val AnActionEvent.requiredProject get() = project!!
-    private fun AnActionEvent.projectKensaOutput() = requiredProject.service<ProjectKensaOutput>()
-    private val AnActionEvent.runContentDescriptor: RunContentDescriptor? get() = RunContentManager.getInstance(requiredProject).selectedContent
 
     private fun isRelevantConfiguration(runProfile: RunProfile?): Boolean {
         if (runProfile == null) return false
@@ -98,10 +89,7 @@ class OpenKensaIndexAction : AnAction() {
         return when (runConfiguration) {
             is JUnitConfiguration -> true
             is GradleRunConfiguration -> runConfiguration.isRunAsTest
-            is MavenRunConfiguration -> {
-                runConfiguration.runnerParameters.goals.any { it.contains("test") }
-            }
-
+            is MavenRunConfiguration -> runConfiguration.runnerParameters.goals.any { it.contains("test") }
             else -> false
         }
     }

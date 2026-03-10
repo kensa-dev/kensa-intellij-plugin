@@ -10,7 +10,6 @@ import com.intellij.ide.browsers.OpenInBrowserRequest
 import com.intellij.ide.browsers.WebBrowserService
 import com.intellij.ide.browsers.WebBrowserUrlProvider
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -18,7 +17,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import dev.kensa.plugin.intellij.service.ProjectKensaOutput
 
 class KensaConsoleFilterProvider : ConsoleFilterProvider {
     override fun getDefaultFilters(project: Project): Array<Filter> = arrayOf(KensaOutputFilter(project))
@@ -40,8 +38,6 @@ class KensaOutputFilter(private val project: Project) : Filter {
             if (output.isNotEmpty()) {
                 logger.debug("Captured Kensa output: $output")
                 foundKensaMarker = false
-
-                project.service<ProjectKensaOutput>().temporaryOutput = output
 
                 val startOffset = entireLength - line.length
                 val endOffset = entireLength

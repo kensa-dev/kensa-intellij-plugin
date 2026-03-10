@@ -1,7 +1,6 @@
 package dev.kensa.plugin.intellij.action
 
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
-import com.intellij.execution.ui.RunContentManager
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.ide.browsers.OpenInBrowserRequest
 import com.intellij.ide.browsers.WebBrowserService
@@ -19,7 +18,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil.isInheritorOrSelf
 import com.intellij.psi.util.PsiModificationTracker
 import dev.kensa.plugin.intellij.action.OpenKensaTestAction.HierarchyCache.isKensaTest
-import dev.kensa.plugin.intellij.service.ProjectKensaOutput
+import dev.kensa.plugin.intellij.gutter.KensaTestResultsService
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.ConcurrentHashMap
@@ -92,10 +91,10 @@ class OpenKensaTestAction : AnAction() {
             return
         }
 
-        val indexPath = project.currentRunKensaIndexPath() ?: run {
+        val indexPath = project.service<KensaTestResultsService>().getIndexPath(classFqn) ?: run {
             Messages.showInfoMessage(
                 project,
-                "No Kensa report path captured for the current run.\nRun tests and ensure Kensa prints:\nKensa Output :\n<absolute path to index.html>",
+                "No Kensa report found for $classFqn.\nRun tests first to generate a report.",
                 "Kensa"
             )
             return
@@ -135,11 +134,6 @@ class OpenKensaTestAction : AnAction() {
         } catch (ex: Exception) {
             thisLogger().error(ex)
         }
-    }
-
-    private fun Project.currentRunKensaIndexPath(): String? {
-        val descriptor = RunContentManager.getInstance(this).selectedContent ?: return null
-        return service<ProjectKensaOutput>()[descriptor]
     }
 
     private fun String.asPsiFileIn(project: Project): PsiFile? =
