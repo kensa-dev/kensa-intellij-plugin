@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>dev.kensa.plugin.intellij-plugin</id>
     <name>Kensa</name>
-    <vendor>Kensa</vendor>
+    <vendor url="https://kensa.dev" email="paul@kensa.dev">Kensa</vendor>
 
     <dynamic>true</dynamic>
 
