@@ -34,7 +34,11 @@ class KensaTestResultsService(private val project: Project) {
         indexHtmlPath: String,
         methodStatuses: Map<String, TestStatus>
     ) {
-        if (classStatus != null) classResults[classFqn] = classStatus
+        val effectiveClassStatus = classStatus
+            ?: if (methodStatuses.values.any { it == TestStatus.FAILED }) TestStatus.FAILED
+            else if (methodStatuses.values.all { it == TestStatus.PASSED } && methodStatuses.isNotEmpty()) TestStatus.PASSED
+            else null
+        if (effectiveClassStatus != null) classResults[classFqn] = effectiveClassStatus
         classIndexPaths[classFqn] = indexHtmlPath
         latestIndexPath = indexHtmlPath
         methodStatuses.forEach { (method, status) ->
@@ -57,7 +61,7 @@ class KensaTestResultsService(private val project: Project) {
     fun refreshMarkers() {
         invokeLater {
             if (!project.isDisposed) {
-                DaemonCodeAnalyzer.getInstance(project).restart()
+                DaemonCodeAnalyzer.getInstance(project).restart("Kensa test results updated")
             }
         }
     }

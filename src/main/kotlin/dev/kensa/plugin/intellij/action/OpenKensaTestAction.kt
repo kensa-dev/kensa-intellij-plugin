@@ -8,7 +8,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -140,11 +142,11 @@ class OpenKensaTestAction : AnAction() {
         LocalFileSystem.getInstance().findFileByPath(this)?.let { PsiManager.getInstance(project).findFile(it) }
 
     private fun createOpenInBrowserRequest(element: PsiElement): OpenInBrowserRequest? {
-        val psiFile = com.intellij.openapi.application.runReadAction {
+        val psiFile = ApplicationManager.getApplication().runReadAction(Computable {
             if (element.isValid) {
                 element.containingFile?.let { if (it.virtualFile == null) null else it }
             } else null
-        } ?: return null
+        }) ?: return null
 
         return object : OpenInBrowserRequest(psiFile, true) {
             override val element = element

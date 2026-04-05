@@ -6,7 +6,8 @@ import com.intellij.ide.browsers.OpenInBrowserRequest
 import com.intellij.ide.browsers.WebBrowserService
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
@@ -94,7 +95,7 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
             notification.expire()
 
             val vFile = LocalFileSystem.getInstance().findFileByPath(indexPath) ?: return
-            val psiFile = runReadAction { PsiManager.getInstance(project).findFile(vFile) } ?: return
+            val psiFile = ApplicationManager.getApplication().runReadAction(Computable { PsiManager.getInstance(project).findFile(vFile) }) ?: return
 
             val request = object : OpenInBrowserRequest(psiFile, true) {
                 override val element: PsiElement = psiFile

@@ -4,7 +4,10 @@
     <name>Kensa</name>
     <vendor>Kensa</vendor>
 
+    <dynamic>true</dynamic>
+
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
     <depends>JUnit</depends>
     <depends>com.intellij.gradle</depends>
     <depends>org.jetbrains.idea.maven</depends>
@@ -35,12 +38,12 @@
     </projectListeners>
 
     <actions>
-        <action id="kensaIndexAction" class="dev.kensa.plugin.intellij.action.OpenKensaIndexAction" icon="/icons/browsers.png">
+        <action id="kensaIndexAction" class="dev.kensa.plugin.intellij.action.OpenKensaIndexAction" icon="/icons/logo.svg">
             <add-to-group group-id="RunTab.TopToolbar" anchor="last"/>
         </action>
         <action
                 id="openKensaTestAction"
-                icon="/icons/browsers.png"
+                icon="/icons/logo.svg"
                 class="dev.kensa.plugin.intellij.action.OpenKensaTestAction"
                 text="Open in Browser"
                 description="Open selected test in the browser">

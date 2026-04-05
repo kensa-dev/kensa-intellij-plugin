@@ -2,8 +2,6 @@ package dev.kensa.plugin.intellij.gutter
 
 import com.intellij.execution.testframework.sm.runner.SMTRunnerEventsAdapter
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
-import com.intellij.execution.testframework.sm.runner.states.TestStateInfo.Magnitude.ERROR_INDEX
-import com.intellij.execution.testframework.sm.runner.states.TestStateInfo.Magnitude.FAILED_INDEX
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
@@ -23,7 +21,7 @@ class KensaTestRunListener(private val project: Project) : SMTRunnerEventsAdapte
 
     private fun SMTestProxy.toStatus(): TestStatus? = when {
         isPassed -> TestStatus.PASSED
-        getMagnitudeInfo() == FAILED_INDEX || getMagnitudeInfo() == ERROR_INDEX -> TestStatus.FAILED
+        isDefect -> TestStatus.FAILED
         else -> null
     }
 

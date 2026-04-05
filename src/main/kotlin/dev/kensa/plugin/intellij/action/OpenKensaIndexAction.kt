@@ -11,7 +11,8 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread.BGT
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys.RUN_PROFILE
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -41,11 +42,11 @@ class OpenKensaIndexAction : AnAction() {
     }
 
     private fun createOpenInBrowserRequest(element: PsiElement): OpenInBrowserRequest? {
-        val psiFile = runReadAction {
+        val psiFile = ApplicationManager.getApplication().runReadAction(Computable {
             if (element.isValid) {
                 element.containingFile?.let { if (it.virtualFile == null) null else it }
             } else null
-        } ?: return null
+        }) ?: return null
 
         return object : OpenInBrowserRequest(psiFile, true) {
             override val element = element

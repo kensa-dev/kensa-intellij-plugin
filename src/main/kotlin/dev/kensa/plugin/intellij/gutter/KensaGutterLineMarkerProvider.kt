@@ -5,7 +5,8 @@ import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.ide.browsers.OpenInBrowserRequest
 import com.intellij.ide.browsers.WebBrowserService
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.markup.GutterIconRenderer
@@ -29,9 +30,13 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
 
     companion object {
         private const val KENSA_TEST_FQN = "dev.kensa.junit.KensaTest"
-        private val KENSA_ICON: Icon = IconLoader.getIcon("/icons/KensaGutter.svg", KensaGutterLineMarkerProvider::class.java)
-        private val KENSA_ICON_PASS: Icon = IconLoader.getIcon("/icons/KensaGutterPass.svg", KensaGutterLineMarkerProvider::class.java)
-        private val KENSA_ICON_FAIL: Icon = IconLoader.getIcon("/icons/KensaGutterFail.svg", KensaGutterLineMarkerProvider::class.java)
+        private val TEST_ANNOTATIONS = setOf(
+            "org.junit.jupiter.api.Test",
+            "org.junit.jupiter.params.ParameterizedTest",
+        )
+        private val KENSA_ICON: Icon = IconLoader.getIcon("/icons/kensa-gutter.svg", KensaGutterLineMarkerProvider::class.java)
+        private val KENSA_ICON_PASS: Icon = IconLoader.getIcon("/icons/kensa-gutter-pass.svg", KensaGutterLineMarkerProvider::class.java)
+        private val KENSA_ICON_FAIL: Icon = IconLoader.getIcon("/icons/kensa-gutter-fail.svg", KensaGutterLineMarkerProvider::class.java)
     }
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
@@ -72,7 +77,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
 
         if (!isKensaTest(uParent, project)) return null
 
-        val icon = iconFor(project, classFqn, methodName)
+        val icon = iconFor(project, classFqn, methodName) ?: return null
 
         return LineMarkerInfo(
             element,
@@ -85,7 +90,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
         )
     }
 
-    private fun iconFor(project: Project, classFqn: String, methodName: String?): Icon {
+    private fun iconFor(project: Project, classFqn: String, methodName: String?): Icon? {
         val results = project.service<KensaTestResultsService>()
         val status = if (methodName != null) {
             results.getMethodStatus(classFqn, methodName)
@@ -95,7 +100,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
         return when (status) {
             TestStatus.PASSED -> KENSA_ICON_PASS
             TestStatus.FAILED -> KENSA_ICON_FAIL
-            null -> KENSA_ICON
+            null -> null
         }
     }
 
@@ -153,7 +158,15 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
             .findClass(KENSA_TEST_FQN, GlobalSearchScope.allScope(project))
             ?: return false
 
-        return InheritanceUtil.isInheritorOrSelf(psiClass, kensaBase, true)
+        if (!InheritanceUtil.isInheritorOrSelf(psiClass, kensaBase, true)) return false
+
+        if (uElement is UMethod) {
+            return uElement.uAnnotations.any { annotation ->
+                annotation.qualifiedName in TEST_ANNOTATIONS
+            }
+        }
+
+        return true
     }
 
     private fun buildRoute(classFqn: String, methodName: String?): String = buildString {
@@ -167,7 +180,7 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
 
     private fun openLocal(project: Project, indexPath: String, classFqn: String, methodName: String?) {
         val vFile = LocalFileSystem.getInstance().findFileByPath(indexPath) ?: return
-        val psiFile = runReadAction { PsiManager.getInstance(project).findFile(vFile) } ?: return
+        val psiFile = ApplicationManager.getApplication().runReadAction(Computable { PsiManager.getInstance(project).findFile(vFile) }) ?: return
 
         val request = object : OpenInBrowserRequest(psiFile, true) {
             override val element: PsiElement = psiFile

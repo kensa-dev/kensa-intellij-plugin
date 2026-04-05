@@ -9,7 +9,8 @@ import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.ide.browsers.OpenInBrowserRequest
 import com.intellij.ide.browsers.WebBrowserService
 import com.intellij.ide.browsers.WebBrowserUrlProvider
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -76,11 +77,11 @@ class KensaOutputFilter(private val project: Project) : Filter {
         }
 
         private fun createOpenInBrowserRequest(element: PsiElement): OpenInBrowserRequest? {
-            val psiFile = runReadAction {
+            val psiFile = ApplicationManager.getApplication().runReadAction(Computable {
                 if (element.isValid) {
                     element.containingFile?.let { if (it.virtualFile == null) null else it }
                 } else null
-            } ?: return null
+            }) ?: return null
 
             return object : OpenInBrowserRequest(psiFile, true) {
                 override val element = element
