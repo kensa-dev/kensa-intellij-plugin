@@ -2,6 +2,13 @@
 
 # Kensa IntelliJ Plugin Changelog
 
+## [Unreleased]
+
+## [0.6.6]
+### Fixed
+- Plugin display name capitalisation on JetBrains Marketplace
+- Synchronise with required Kensa version
+
 ## [0.6.5]
 ### Added
 - Gutter icons showing pass/fail status for `@Test` and `@ParameterizedTest` methods and their containing classes
