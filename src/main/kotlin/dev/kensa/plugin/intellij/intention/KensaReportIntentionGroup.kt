@@ -5,11 +5,11 @@ import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.impl.IntentionActionGroup
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
 import com.intellij.ui.SimpleListCellRenderer
-import com.intellij.ui.popup.list.ListPopupImpl
 import com.intellij.util.ui.JBUI
 import javax.swing.Icon
 
@@ -31,7 +31,7 @@ class KensaReportIntentionGroup : IntentionActionGroup<IntentionAction>(
             invokeAction(actions.first())
             return
         }
-        com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()
+        JBPopupFactory.getInstance()
             .createPopupChooserBuilder(actions)
             .setTitle("Kensa Report")
             .setRenderer(SimpleListCellRenderer.create { label, value, _ ->
