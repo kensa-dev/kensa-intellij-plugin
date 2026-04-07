@@ -3,6 +3,7 @@ package dev.kensa.plugin.intellij.settings
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -28,14 +29,10 @@ class KensaSettingsConfigurable(private val project: Project) : BoundConfigurabl
                         getter = { project.service<KensaSettings>().state.ciReportUrlTemplate ?: "" },
                         setter = { project.service<KensaSettings>().state.ciReportUrlTemplate = it.ifBlank { null } }
                     )
-                    .rows(3)
+                    .rows(5)
+                    .align(AlignX.FILL)
                     .resizableColumn()
-                    .comment(
-                        """
-                        Available tokens: <b>{testClass}</b>, <b>{testMethod}</b>, <b>{simpleClassName}</b>, <b>{packageName}</b><br/>
-                        Example: https://myserver.com/repo/download/MyTeam_MyProject/lastSuccessful/kensa-output/index.html#/test/{testClass}?method={testMethod}
-                        """.trimIndent()
-                    )
+                    .comment("Available tokens: <b>{projectName}</b>, <b>{testClass}</b>, <b>{testMethod}</b>, <b>{simpleClassName}</b>, <b>{packageName}</b>")
             }
         }
     }

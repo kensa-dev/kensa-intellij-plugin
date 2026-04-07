@@ -30,6 +30,16 @@
         <codeInsight.lineMarkerProvider
             language="kotlin"
             implementationClass="dev.kensa.plugin.intellij.gutter.KensaGutterLineMarkerProvider"/>
+        <intentionAction>
+            <language>JAVA</language>
+            <className>dev.kensa.plugin.intellij.intention.KensaReportIntentionGroup</className>
+            <category>Kensa</category>
+        </intentionAction>
+        <intentionAction>
+            <language>kotlin</language>
+            <className>dev.kensa.plugin.intellij.intention.KensaReportIntentionGroup</className>
+            <category>Kensa</category>
+        </intentionAction>
     </extensions>
 
     <projectListeners>

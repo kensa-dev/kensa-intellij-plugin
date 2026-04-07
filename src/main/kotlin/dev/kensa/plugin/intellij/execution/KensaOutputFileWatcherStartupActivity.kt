@@ -1,6 +1,7 @@
 
 package dev.kensa.plugin.intellij.execution
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.ide.browsers.OpenInBrowserRequest
 import com.intellij.ide.browsers.WebBrowserService
@@ -46,12 +47,16 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
 
                 if (kensaEvents.isEmpty()) return
 
-                kensaEvents
-                    .filter { it.path.endsWith("/indices.json") }
-                    .forEach { event ->
-                        val vFile = LocalFileSystem.getInstance().findFileByPath(event.path) ?: return@forEach
-                        KensaIndexLoader.loadFromFile(project, vFile)
+                val indexJsonEvents = kensaEvents.filter { it.path.endsWith("/indices.json") }
+                indexJsonEvents.forEach { event ->
+                    val vFile = LocalFileSystem.getInstance().findFileByPath(event.path) ?: return@forEach
+                    KensaIndexLoader.loadFromFile(project, vFile)
+                }
+                if (indexJsonEvents.isNotEmpty()) {
+                    ApplicationManager.getApplication().invokeLater {
+                        DaemonCodeAnalyzer.getInstance(project).restart("Kensa test results updated")
                     }
+                }
 
                 val indexHtmlEvents = kensaEvents.filter { it.path.endsWith("/index.html") }
                 if (indexHtmlEvents.isEmpty()) return
