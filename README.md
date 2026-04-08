@@ -15,6 +15,8 @@ IntelliJ plugin for the [Kensa](https://github.com/kensa-dev/kensa) testing fram
 - **Console hyperlinks** — the `Kensa Output :` marker in test console output becomes a clickable link that opens the report directly.
 - **Live notifications** — a balloon notification fires when a new report is written, with an _Open Report_ action.
 
+For an overview of what Kensa is and why it exists, see the [introductory blog post](https://kensa.dev/blog/introducing-kensa).
+
 ## Requirements
 
 Kensa must be configured in your project. See the [Kensa documentation](https://kensa.dev) and the [Kensa GitHub repository](https://github.com/kensa-dev/kensa) for setup instructions.
