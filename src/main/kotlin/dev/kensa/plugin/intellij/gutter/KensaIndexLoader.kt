@@ -20,6 +20,7 @@ object KensaIndexLoader {
             val root = gson.fromJson(json, KensaIndicesRoot::class.java) ?: return
 
             val service = project.service<KensaTestResultsService>()
+            service.clearForIndexHtml(indexHtml.path)
             root.indices?.forEach { entry ->
                 val classFqn = entry.testClass ?: return@forEach
                 val classStatus = entry.state?.toTestStatus()

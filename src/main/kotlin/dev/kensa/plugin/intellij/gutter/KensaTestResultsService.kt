@@ -28,6 +28,17 @@ class KensaTestResultsService(private val project: Project) {
     fun getIndexPath(classFqn: String): String? =
         classIndexPaths[classFqn]
 
+    fun clearForIndexHtml(indexHtmlPath: String) {
+        val staleClasses = classIndexPaths.entries
+            .filter { it.value == indexHtmlPath }
+            .map { it.key }
+        staleClasses.forEach { classFqn ->
+            classResults.remove(classFqn)
+            classIndexPaths.remove(classFqn)
+            methodResults.keys.removeIf { it.startsWith("$classFqn#") }
+        }
+    }
+
     fun updateFromIndex(
         classFqn: String,
         classStatus: TestStatus?,

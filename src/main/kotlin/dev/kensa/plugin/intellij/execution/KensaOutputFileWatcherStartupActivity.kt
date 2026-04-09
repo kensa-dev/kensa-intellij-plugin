@@ -32,6 +32,9 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
         val basePath = project.basePath ?: return
 
         scanExistingIndices(project, basePath)
+        ApplicationManager.getApplication().invokeLater {
+            DaemonCodeAnalyzer.getInstance(project).restart("Kensa startup scan complete")
+        }
 
         val lastNotifiedAt = AtomicLong(0)
         val debounceMs = 3000L

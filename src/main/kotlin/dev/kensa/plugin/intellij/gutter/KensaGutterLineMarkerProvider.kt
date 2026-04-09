@@ -37,11 +37,8 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
 
     private fun iconFor(project: Project, classFqn: String, methodName: String?): Icon? {
         val results = project.service<KensaTestResultsService>()
-        val status = if (methodName != null) {
-            results.getMethodStatus(classFqn, methodName)
-        } else {
-            results.getClassStatus(classFqn)
-        }
+        val status = if (methodName != null) results.getMethodStatus(classFqn, methodName)
+                     else results.getClassStatus(classFqn)
         return when (status) {
             TestStatus.PASSED -> iconPass
             TestStatus.FAILED -> iconFail
