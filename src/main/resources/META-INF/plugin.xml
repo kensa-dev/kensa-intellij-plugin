@@ -30,6 +30,12 @@
         <codeInsight.lineMarkerProvider
             language="kotlin"
             implementationClass="dev.kensa.plugin.intellij.gutter.KensaGutterLineMarkerProvider"/>
+<!--        <toolWindow-->
+<!--            id="Kensa"-->
+<!--            anchor="bottom"-->
+<!--            factoryClass="dev.kensa.plugin.intellij.toolwindow.KensaToolWindowFactory"-->
+<!--            icon="/icons/logo.svg"-->
+<!--            canCloseContents="false"/>-->
         <intentionAction>
             <language>JAVA</language>
             <className>dev.kensa.plugin.intellij.intention.KensaReportIntentionGroup</className>
@@ -59,5 +65,11 @@
                 description="Open selected test in the browser">
             <add-to-group group-id="TestTreePopupMenu" anchor="last"/>
         </action>
+        <group id="kensaOpenReportForFolderGroup"
+               class="dev.kensa.plugin.intellij.action.OpenKensaReportForFolderGroup"
+               text="Open Kensa Report"
+               popup="true">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </group>
     </actions>
 </idea-plugin>

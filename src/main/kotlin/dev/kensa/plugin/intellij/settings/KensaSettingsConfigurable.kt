@@ -12,6 +12,18 @@ import com.intellij.ui.dsl.builder.rows
 class KensaSettingsConfigurable(private val project: Project) : BoundConfigurable("Kensa") {
 
     override fun createPanel() = panel {
+        group("Output") {
+            row("Directory name:") {
+                textField()
+                    .bindText(
+                        getter = { project.service<KensaSettings>().state.outputDirName ?: "" },
+                        setter = { project.service<KensaSettings>().state.outputDirName = it.ifBlank { null } }
+                    )
+                    .align(AlignX.FILL)
+                    .resizableColumn()
+                    .comment("Directory written by Kensa (default: <b>kensa-output</b>). Leave blank to use the default.")
+            }
+        }
         group("Editor") {
             row {
                 checkBox("Show gutter icons on Kensa test classes and methods")

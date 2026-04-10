@@ -12,8 +12,9 @@ import javax.swing.Icon
 
 class KensaGutterLineMarkerProvider : LineMarkerProvider {
 
-    private val iconPass: Icon = IconLoader.getIcon("/icons/kensa-gutter-pass.svg", KensaGutterLineMarkerProvider::class.java)
-    private val iconFail: Icon = IconLoader.getIcon("/icons/kensa-gutter-fail.svg", KensaGutterLineMarkerProvider::class.java)
+    private val iconPass: Icon    = IconLoader.getIcon("/icons/kensa-gutter-pass.svg",    KensaGutterLineMarkerProvider::class.java)
+    private val iconFail: Icon    = IconLoader.getIcon("/icons/kensa-gutter-fail.svg",    KensaGutterLineMarkerProvider::class.java)
+    private val iconIgnored: Icon = IconLoader.getIcon("/icons/kensa-gutter-ignored.svg", KensaGutterLineMarkerProvider::class.java)
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         if (!element.project.service<KensaSettings>().state.showGutterIcons) return null
@@ -40,9 +41,10 @@ class KensaGutterLineMarkerProvider : LineMarkerProvider {
         val status = if (methodName != null) results.getMethodStatus(classFqn, methodName)
                      else results.getClassStatus(classFqn)
         return when (status) {
-            TestStatus.PASSED -> iconPass
-            TestStatus.FAILED -> iconFail
-            null -> null
+            TestStatus.PASSED  -> iconPass
+            TestStatus.FAILED  -> iconFail
+            TestStatus.IGNORED -> iconIgnored
+            null               -> null
         }
     }
 }

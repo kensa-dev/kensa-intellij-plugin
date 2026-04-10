@@ -43,6 +43,7 @@ object KensaIndexLoader {
     private fun String.toTestStatus(): TestStatus? = when (this) {
         "Passed" -> TestStatus.PASSED
         "Failed" -> TestStatus.FAILED
+        "Ignored", "Disabled", "Skipped" -> TestStatus.IGNORED
         else -> null
     }
 }

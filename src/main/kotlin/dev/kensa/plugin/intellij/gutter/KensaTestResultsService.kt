@@ -5,12 +5,22 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.Service.Level.PROJECT
 import com.intellij.openapi.project.Project
+import com.intellij.util.messages.Topic
 import java.util.concurrent.ConcurrentHashMap
 
-enum class TestStatus { PASSED, FAILED }
+enum class TestStatus { PASSED, FAILED, IGNORED }
+
+fun interface KensaResultsListener {
+    fun resultsUpdated()
+}
 
 @Service(PROJECT)
 class KensaTestResultsService(private val project: Project) {
+
+    companion object {
+        val KENSA_RESULTS_TOPIC: Topic<KensaResultsListener> =
+            Topic.create("Kensa Results", KensaResultsListener::class.java)
+    }
 
     private val methodResults = ConcurrentHashMap<String, TestStatus>()
     private val classResults = ConcurrentHashMap<String, TestStatus>()
@@ -27,6 +37,19 @@ class KensaTestResultsService(private val project: Project) {
 
     fun getIndexPath(classFqn: String): String? =
         classIndexPaths[classFqn]
+
+    fun allIndexPaths(): Set<String> = classIndexPaths.values.toSet()
+
+    fun classesForIndex(indexHtmlPath: String): List<String> =
+        classIndexPaths.entries
+            .filter { it.value == indexHtmlPath }
+            .map { it.key }
+            .sorted()
+
+    fun methodsForClass(classFqn: String): Map<String, TestStatus> =
+        methodResults.entries
+            .filter { it.key.startsWith("$classFqn#") }
+            .associate { it.key.removePrefix("$classFqn#") to it.value }
 
     fun clearForIndexHtml(indexHtmlPath: String) {
         val staleClasses = classIndexPaths.entries
@@ -47,7 +70,8 @@ class KensaTestResultsService(private val project: Project) {
     ) {
         val effectiveClassStatus = classStatus
             ?: if (methodStatuses.values.any { it == TestStatus.FAILED }) TestStatus.FAILED
-            else if (methodStatuses.values.all { it == TestStatus.PASSED } && methodStatuses.isNotEmpty()) TestStatus.PASSED
+            else if (methodStatuses.values.any { it == TestStatus.PASSED }) TestStatus.PASSED
+            else if (methodStatuses.values.isNotEmpty()) TestStatus.IGNORED
             else null
         if (effectiveClassStatus != null) classResults[classFqn] = effectiveClassStatus
         classIndexPaths[classFqn] = indexHtmlPath
@@ -73,6 +97,7 @@ class KensaTestResultsService(private val project: Project) {
         invokeLater {
             if (!project.isDisposed) {
                 DaemonCodeAnalyzer.getInstance(project).restart("Kensa test results updated")
+                project.messageBus.syncPublisher(KENSA_RESULTS_TOPIC).resultsUpdated()
             }
         }
     }

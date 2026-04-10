@@ -20,7 +20,9 @@ import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
+import com.intellij.openapi.components.service
 import dev.kensa.plugin.intellij.gutter.KensaIndexLoader
+import dev.kensa.plugin.intellij.settings.KensaSettings
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
@@ -41,10 +43,11 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
 
         project.messageBus.connect().subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
             override fun after(events: List<VFileEvent>) {
+                val outputDir = project.service<KensaSettings>().effectiveOutputDirName
                 val kensaEvents = events.filter { event ->
                     (event is VFileContentChangeEvent || event is VFileCreateEvent) &&
                         event.path.startsWith(basePath) &&
-                        event.path.contains("/kensa-output/") &&
+                        event.path.contains("/$outputDir/") &&
                         (event.path.endsWith("/index.html") || event.path.endsWith("/indices.json"))
                 }
 
@@ -86,8 +89,9 @@ class KensaOutputFileWatcherStartupActivity : ProjectActivity {
     }
 
     private fun scanExistingIndices(project: Project, basePath: String) {
+        val outputDir = project.service<KensaSettings>().effectiveOutputDirName
         File(basePath).walkTopDown()
-            .filter { it.name == "indices.json" && it.parentFile?.name == "kensa-output" }
+            .filter { it.name == "indices.json" && it.parentFile?.name == outputDir }
             .forEach { file ->
                 val vFile = LocalFileSystem.getInstance().findFileByPath(file.path) ?: return@forEach
                 KensaIndexLoader.loadFromFile(project, vFile)

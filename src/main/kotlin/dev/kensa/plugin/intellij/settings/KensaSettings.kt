@@ -10,6 +10,9 @@ import com.intellij.openapi.project.Project
 )
 class KensaSettings : SimplePersistentStateComponent<KensaSettingsState>(KensaSettingsState()) {
 
+    val effectiveOutputDirName: String
+        get() = state.outputDirName?.takeIf { it.isNotBlank() } ?: "kensa-output"
+
     fun resolveUrl(project: Project, classFqn: String, methodName: String?): String? {
         val template = state.ciReportUrlTemplate?.takeIf { it.isNotBlank() } ?: return null
 
@@ -35,4 +38,5 @@ class KensaSettings : SimplePersistentStateComponent<KensaSettingsState>(KensaSe
 class KensaSettingsState : BaseState() {
     var ciReportUrlTemplate by string()
     var showGutterIcons by property(false)
+    var outputDirName by string()
 }

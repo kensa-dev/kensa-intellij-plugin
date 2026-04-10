@@ -120,6 +120,22 @@ object KensaReportOpener {
         }
     }
 
+    fun openIndexHtml(project: Project, indexHtmlPath: String) {
+        val vFile = LocalFileSystem.getInstance().findFileByPath(indexHtmlPath) ?: return
+        val psiFile = ApplicationManager.getApplication()
+            .runReadAction(Computable { PsiManager.getInstance(project).findFile(vFile) }) ?: return
+        val request = object : OpenInBrowserRequest(psiFile, true) {
+            override val element: PsiElement = psiFile
+        }
+        try {
+            val url = WebBrowserService.getInstance().getUrlsToOpen(request, false)
+                .firstOrNull()?.toExternalForm() ?: return
+            BrowserLauncher.instance.browse(url, null, project)
+        } catch (ex: Exception) {
+            thisLogger().error(ex)
+        }
+    }
+
     private fun openLocalBrowser(project: Project, indexPath: String, classFqn: String, methodName: String?) {
         val vFile = LocalFileSystem.getInstance().findFileByPath(indexPath) ?: return
         val psiFile = ApplicationManager.getApplication()
