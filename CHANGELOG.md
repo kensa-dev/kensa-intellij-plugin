@@ -3,6 +3,18 @@
 # Kensa IntelliJ Plugin Changelog
 
 ## [Unreleased]
+### Added
+- Project view context menu — right-click any folder to open Kensa reports found below it; one menu item per output directory, sorted alphabetically. Works across multi-module Gradle and Maven projects
+- Ignored/disabled test state with amber gutter icon, in addition to existing pass/fail icons
+- Configurable output directory name — Settings → Tools → Kensa → Output directory name (default: `kensa-output`), for projects that customise the Kensa output path
+
+### Changed
+- Gutter icons now appear on project open if output already exists, without requiring a file change or test run in the IDE
+- Stale gutter icons are removed immediately when `indices.json` is rewritten (e.g. after running a subset of tests)
+- Class-level gutter icon shown only when at least one method in that class appears in the index
+- Method gutter icons shown only for methods present in the index
+
+## [0.6.6]
 ### Fixed
 - Plugin display name capitalisation on JetBrains Marketplace
 - Synchronise with required Kensa version
